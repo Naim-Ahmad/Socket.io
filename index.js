@@ -17,9 +17,7 @@ io.on("connection", (socket) => {
   console.log(socket.id, "connected");
 
   io.emit("join", {
-    clients: Object.keys(clients).map((id, ind, arr) =>
-      id == arr[arr.length - 1] ? id : undefined
-    ),
+    clients: Object.keys(clients),
   });
 
   clients[socket.id] = socket;
