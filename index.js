@@ -14,7 +14,11 @@ const io = new Server(server, {
 const clients = {};
 
 io.on("connection", (socket) => {
-  clients[socket.id] = socket;
+  console.log(socket.id, "connected");
+
+  if (Object.keys(clients).length < 1) {
+    clients[socket.id] = socket;
+  }
   io.emit("join", { clients: Object.keys(clients) });
 
   socket.on("offer", ({ offer, to }) => {
