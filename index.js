@@ -16,10 +16,13 @@ const clients = {};
 io.on("connection", (socket) => {
   console.log(socket.id, "connected");
 
-  if (Object.keys(clients).length <= 1) {
-    clients[socket.id] = socket;
-  }
-  io.emit("join", { clients: Object.keys(clients) });
+  clients[socket.id] = socket;
+
+  io.emit("join", {
+    clients: Object.keys(clients).map((id, ind, arr) =>
+      id == arr[arr.length - 1] ? id : undefined
+    ),
+  });
 
   socket.on("offer", ({ offer, to }) => {
     if (clients[to]) {
