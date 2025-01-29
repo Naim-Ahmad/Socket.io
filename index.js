@@ -16,7 +16,7 @@ const clients = {};
 io.on("connection", (socket) => {
   console.log(socket.id, "connected");
 
-  if (Object.keys(clients).length == 0) {
+  if (Object.keys(clients).length <= 1) {
     clients[socket.id] = socket;
   }
   io.emit("join", { clients: Object.keys(clients) });
