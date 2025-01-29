@@ -14,19 +14,30 @@ const io = new Server(server, {
 const clients = {};
 
 io.on("connection", (socket) => {
-  clients.userId = socket.id;
+  clients[socket.id] = socket;
   console.log("User Connected", socket.id);
-  socket.on("offer", (offer) => {
-    // console.log(offer);
-    socket.broadcast.emit("offer", offer);
+
+  socket.on("offer", ({ offer, to }) => {
+    if (clients[to]) {
+      clients[to].emit("offer", { offer, from: socket.id });
+    }
   });
 
-  socket.on("answer", (answer) => {
-    socket.broadcast.emit("answer", answer);
+  socket.on("answer", ({ answer, to }) => {
+    if (clients[to]) {
+      clients[to].emit("answer", { answer, from: socket.id });
+    }
   });
-  socket.on("iceCandidate", (iceCandidate) => {
-    // console.log(iceCandidate);
-    socket.broadcast.emit("iceCandidate", iceCandidate);
+
+  socket.on("iceCandidate", ({ candidate, to }) => {
+    if (clients[to]) {
+      clients[to].emit("iceCandidate", { candidate });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected", socket.id);
+    delete clients[socket.id];
   });
 });
 
