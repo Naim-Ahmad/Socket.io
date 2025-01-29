@@ -15,7 +15,7 @@ const clients = {};
 
 io.on("connection", (socket) => {
   clients[socket.id] = socket;
-  console.log("User Connected", socket.id);
+  io.emit("join", { clients: Object.keys(clients) });
 
   socket.on("offer", ({ offer, to }) => {
     if (clients[to]) {
