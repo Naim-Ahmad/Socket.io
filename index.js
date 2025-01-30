@@ -1,54 +1,50 @@
 const express = require("express");
-const { createServer } = require("http");
+const http = require("http");
 const { Server } = require("socket.io");
 
 const app = express();
-
-const server = createServer(app);
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*", // Allow all origins (change this for security)
+    methods: ["GET", "POST"],
   },
 });
 
-const clients = {};
-
 io.on("connection", (socket) => {
-  console.log(socket.id, "connected");
+  console.log(`User connected: ${socket.id}`);
 
-  io.emit("join", {
-    clients: Object.keys(clients),
+  // Handle offer (when caller sends SDP offer)
+  socket.on("offer", ({ target, offer }) => {
+    console.log(`Offer from ${socket.id} to ${target}`);
+    io.to(target).emit("offer", { target: socket.id, offer });
   });
 
-  clients[socket.id] = socket;
-  socket.on("offer", ({ offer, to }) => {
-    if (clients[to]) {
-      clients[to].emit("offer", { offer, from: socket.id });
-    }
+  // Handle answer (when callee responds with SDP answer)
+  socket.on("answer", ({ target, answer }) => {
+    console.log(`Answer from ${socket.id} to ${target}`);
+    io.to(target).emit("call-answered", { caller: socket.id, answer });
   });
 
-  socket.on("answer", ({ answer, to }) => {
-    if (clients[to]) {
-      clients[to].emit("answer", { answer, from: socket.id });
-    }
+  // Handle ICE candidates
+  socket.on("ice-candidate", ({ target, candidate }) => {
+    console.log(`ICE candidate from ${socket.id} to ${target}`);
+    io.to(target).emit("ice-candidate", { candidate });
   });
 
-  socket.on("iceCandidate", ({ candidate, to }) => {
-    if (clients[to]) {
-      clients[to].emit("iceCandidate", { candidate });
-    }
+  // Handle call ending
+  socket.on("end-call", ({ peer }) => {
+    console.log(`Call ended by ${socket.id} for ${peer}`);
+    io.to(peer).emit("call-ended", { caller: socket.id });
   });
 
+  // Handle user disconnect
   socket.on("disconnect", () => {
-    console.log("User Disconnected", socket.id);
-    delete clients[socket.id];
+    console.log(`User disconnected: ${socket.id}`);
+    // io.emit("user-list", Object.keys(users));
   });
 });
 
-app.get("/", (req, res) => {
-  res.json({ success: true });
-});
-
-server.listen(3000, () => {
-  console.log("server running at http://localhost:3000");
+server.listen(4000, () => {
+  console.log("Server is running on port 4000");
 });
